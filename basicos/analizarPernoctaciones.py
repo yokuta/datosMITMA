@@ -14,7 +14,7 @@ df2024['año'] = 2024
 df = pd.concat([df2022, df2023, df2024], ignore_index=True)
 
 # Definir los distritos objetivo (Centro y alrededores)
-zonas_distritos = ['2807901', '2807902', '2807903', '2807904', '2807907']
+zonas_distritos = ['2807901', '2807902', '2807903a', '2807904', '2807907']
 
 # Filtrar solo pernoctaciones en esos distritos
 dfMadrid = df[df['zona_pernoctacion'].isin(zonas_distritos)].copy()
