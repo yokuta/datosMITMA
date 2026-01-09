@@ -13,8 +13,8 @@ BASE_URL = (
     "estudios_basicos/por-distritos/pernoctaciones/ficheros-diarios"
 )
 
-START_DATE = "2024-06-03"
-END_DATE   = "2024-06-03"
+START_DATE = "2025-03-01"
+END_DATE   = "2025-03-02"
 
 
 def daterange(start: str, end: str):

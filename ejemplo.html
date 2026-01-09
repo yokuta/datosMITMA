@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>District Analysis Story</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            overflow-x: hidden;
+        }
+
+        #map {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        .story-section {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .content-box {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            margin: 20px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        p {
+            font-size: 1.2em;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .spacer {
+            height: 100vh;
+        }
+
+        #intro {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        #intro .content-box {
+            background: rgba(255, 255, 255, 0.98);
+        }
+
+        #file-loader {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        #file-loader input {
+            margin-bottom: 10px;
+        }
+
+        #file-loader button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #file-loader button:hover {
+            background: #5568d3;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div id="file-loader">
+        <p style="margin-bottom: 10px; font-size: 14px; color: #333;">Load GeoJSON file:</p>
+        <input type="file" id="geojson-input" accept=".geojson,.json">
+    </div>
+
+    <section id="intro" class="story-section">
+        <div class="content-box">
+            <h1>Understanding Spain's Districts</h1>
+            <p>Scroll down to explore our analysis of key districts across Spain and discover the patterns that emerge from the data.</p>
+        </div>
+    </section>
+
+    <div class="spacer"></div>
+
+    <section id="focus" class="story-section">
+        <div class="content-box">
+            <h2>Our Study Area</h2>
+            <p>Our study will focus on these districts, which show unique characteristics that warrant closer examination.</p>
+        </div>
+    </section>
+
+    <div class="spacer"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.2/proj4.js"></script>
+    <script>
+        // Initialize map
+        const map = L.map('map', {
+            zoomControl: false,
+            scrollWheelZoom: false
+        }).setView([40.4168, -3.7038], 6);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Target district codes
+        const targetCodes = ['1101201','1101202','1101203','1101204','1101205','1101206','1101207','1101208','1101209','1101210'];
+        
+        let allDistrictsLayer;
+        let highlightedDistrictsLayer;
+        let targetBounds;
+
+        // Style functions
+        function defaultStyle(feature) {
+            return {
+                fillColor: '#3388ff',
+                weight: 1,
+                opacity: 0.6,
+                color: '#666',
+                fillOpacity: 0.3
+            };
+        }
+
+        function highlightStyle(feature) {
+            return {
+                fillColor: '#ff6b6b',
+                weight: 2,
+                opacity: 1,
+                color: '#c92a2a',
+                fillOpacity: 0.7
+            };
+        }
+
+        // File input handler
+        document.getElementById('geojson-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        loadGeoJSON(data);
+                        document.getElementById('file-loader').classList.add('hidden');
+                    } catch (error) {
+                        console.error('Error parsing GeoJSON:', error);
+                        alert('Error loading GeoJSON file. Please make sure it is a valid GeoJSON file.');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function loadGeoJSON(data) {
+            // Clear existing layers
+            if (allDistrictsLayer) map.removeLayer(allDistrictsLayer);
+            if (highlightedDistrictsLayer) map.removeLayer(highlightedDistrictsLayer);
+
+            // Define EPSG:3042 projection (ETRS89 / UTM zone 30N)
+            proj4.defs("EPSG:3042", "+proj=utm +zone=30 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+
+            // Function to reproject coordinates
+            function reprojectCoordinates(coords) {
+                if (typeof coords[0] === 'number') {
+                    // Single coordinate pair
+                    const reprojected = proj4('EPSG:3042', 'EPSG:4326', coords);
+                    return [reprojected[1], reprojected[0]]; // Leaflet uses [lat, lng]
+                } else {
+                    // Array of coordinates
+                    return coords.map(reprojectCoordinates);
+                }
+            }
+
+            // Function to reproject geometry
+            function reprojectGeometry(geometry) {
+                const newGeometry = { ...geometry };
+                if (geometry.type === 'Polygon') {
+                    newGeometry.coordinates = geometry.coordinates.map(ring => 
+                        ring.map(coord => {
+                            const [lng, lat] = proj4('EPSG:3042', 'EPSG:4326', coord);
+                            return [lng, lat];
+                        })
+                    );
+                } else if (geometry.type === 'MultiPolygon') {
+                    newGeometry.coordinates = geometry.coordinates.map(polygon =>
+                        polygon.map(ring => 
+                            ring.map(coord => {
+                                const [lng, lat] = proj4('EPSG:3042', 'EPSG:4326', coord);
+                                return [lng, lat];
+                            })
+                        )
+                    );
+                }
+                return newGeometry;
+            }
+
+            // Reproject all features
+            const reprojectedData = {
+                type: 'FeatureCollection',
+                features: data.features.map(feature => ({
+                    ...feature,
+                    geometry: reprojectGeometry(feature.geometry)
+                }))
+            };
+
+            // Create layer for all districts
+            allDistrictsLayer = L.geoJSON(reprojectedData, {
+                style: defaultStyle
+            }).addTo(map);
+
+            // Fit map to all districts
+            map.fitBounds(allDistrictsLayer.getBounds(), { padding: [50, 50] });
+
+            // Filter and create layer for target districts
+            const targetFeatures = {
+                type: 'FeatureCollection',
+                features: reprojectedData.features.filter(feature => {
+                    // Check multiple possible property names for the district code
+                    const props = feature.properties;
+                    const code = props.CUMUN || props.codigo || props.CODE || props.code || 
+                                 props.DISTRITO || props.distrito || props.id || props.ID;
+                    return targetCodes.includes(String(code));
+                })
+            };
+
+            if (targetFeatures.features.length > 0) {
+                highlightedDistrictsLayer = L.geoJSON(targetFeatures, {
+                    style: highlightStyle
+                });
+
+                // Calculate bounds of target districts
+                targetBounds = highlightedDistrictsLayer.getBounds();
+                
+                console.log(`Found ${targetFeatures.features.length} target districts`);
+            } else {
+                console.warn('No target districts found. Check the property name in your GeoJSON.');
+                console.log('Available properties:', reprojectedData.features[0]?.properties);
+            }
+
+            // Set up scroll listeners
+            setupScrollAnimation();
+        }
+
+        function setupScrollAnimation() {
+            let ticking = false;
+
+            window.addEventListener('scroll', () => {
+                if (!ticking) {
+                    window.requestAnimationFrame(() => {
+                        handleScroll();
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            });
+        }
+
+        function handleScroll() {
+            const scrollY = window.scrollY;
+            const windowHeight = window.innerHeight;
+            const focusSection = document.getElementById('focus');
+            const focusTop = focusSection.offsetTop;
+
+            // Calculate progress (0 to 1) as user scrolls from intro to focus section
+            const progress = Math.max(0, Math.min(1, (scrollY - windowHeight) / windowHeight));
+
+            if (progress > 0.3 && highlightedDistrictsLayer && !map.hasLayer(highlightedDistrictsLayer)) {
+                // Add highlighted layer
+                highlightedDistrictsLayer.addTo(map);
+            } else if (progress <= 0.3 && highlightedDistrictsLayer && map.hasLayer(highlightedDistrictsLayer)) {
+                // Remove highlighted layer
+                map.removeLayer(highlightedDistrictsLayer);
+            }
+
+            if (progress > 0.5 && targetBounds) {
+                // Zoom to target districts
+                map.flyToBounds(targetBounds, {
+                    padding: [50, 50],
+                    duration: 1.5,
+                    maxZoom: 10
+                });
+            } else if (progress <= 0.5) {
+                // Return to Spain view
+                map.flyTo([40.4168, -3.7038], 6, {
+                    duration: 1.5
+                });
+            }
+        }
+    </script>
+</body>
+</html>
