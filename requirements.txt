@@ -1,1 +1,1 @@
-pip install pandas pyarrow fsspec
+pip install pandas pyarrow fsspec pyspainmobility requests
