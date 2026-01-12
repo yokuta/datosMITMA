@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sevilla: La Ciudad Intercambiada</title>
+    <style>
+        body { margin: 0; background: #111; color: white; font-family: 'Helvetica', sans-serif; }
+        
+        /* El contenedor del mapa se queda fijo */
+        .map-container {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        iframe { border: none; width: 100%; height: 100%; }
+
+        /* Los bloques de texto que hacen scroll */
+        .content {
+            position: relative;
+            z-index: 2;
+            pointer-events: none; /* Para que el scroll pase al fondo si quieres */
+        }
+
+        .step {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .text-box {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 2rem;
+            max-width: 400px;
+            border-left: 4px solid #e74c3c;
+            pointer-events: auto; /* Para que el texto sí sea interactivo */
+        }
+
+        h1 { font-size: 3rem; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <div class="map-container">
+        <iframe id="visor-mapa" src="mapa_anillos.html"></iframe>
+    </div>
+
+    <div class="content">
+        <section class="step">
+            <div class="text-box">
+                <h1>Sevilla Vacía</h1>
+                <p>El Sábado Santo, el 21% de los sevillanos huye de la ciudad. 146.000 personas dejan sus llaves en casa.</p>
+            </div>
+        </section>
+
+        <section class="step">
+            <div class="text-box">
+                <h1>El Relevo</h1>
+                <p>Pero la ciudad no duerme. Mientras los locales se van, miles de visitantes ocupan su lugar.</p>
+            </div>
+        </section>
+
+        <section class="step">
+            <div class="text-box">
+                <h1>La playa</h1>
+                <p>El destino favorito está a menos de 90 minutos. Matalascañas y Chipiona se convierten en "barrios" de Sevilla.</p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Aquí podrías añadir lógica para cambiar el src del iframe 
+        // según cuánto scroll haya hecho el usuario
+    </script>
+</body>
+</html>
