@@ -6,15 +6,15 @@ import pandas as pd
 import requests
 
 
-OUTPUT_DIR = Path(r"D:\Datos\Movilidad\MinisteriodeTransportes\EstudiosBasicos\Pernoctaciones")
+OUTPUT_DIR = Path(r"C:\Users\khora\Downloads")
 
 BASE_URL = (
     "https://movilidad-opendata.mitma.es/"
     "estudios_basicos/por-distritos/pernoctaciones/ficheros-diarios"
 )
 
-START_DATE = "2025-03-01"
-END_DATE   = "2025-03-02"
+START_DATE = "2025-02-17"
+END_DATE   = "2025-02-17"
 
 
 def daterange(start: str, end: str):
