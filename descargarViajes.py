@@ -13,8 +13,8 @@ BASE_URL = (
     "estudios_basicos/por-distritos/viajes/ficheros-diarios"
 )
 
-START_DATE = "2025-02-14"
-END_DATE   = "2025-02-14"
+START_DATE = "2025-02-15"
+END_DATE   = "2025-02-15"
 
 
 def daterange(start: str, end: str):
@@ -37,32 +37,14 @@ def download_file(url: str, dest: Path) -> None:
 
 
 def read_mitma_csv_gz(path: Path) -> pd.DataFrame:
-    """
-    Lee el CSV.gz probando separadores típicos del MITMA: '|', ';', ','.
-    Se queda con el separador que produzca MÁS columnas.
-    """
-    best_df = None
-    best_cols = 0
-    best_sep = None
+    return pd.read_csv(
+        path,
+        compression="gzip",
+        sep="|",
+        dtype="string",
+        low_memory=False,
+    )
 
-    for sep in ["|"]:
-        try:
-            df = pd.read_csv(path, compression="gzip", sep=sep, dtype=str, low_memory=False)
-            ncols = df.shape[1]
-            if ncols > best_cols:
-                best_df = df
-                best_cols = ncols
-                best_sep = sep
-        except Exception:
-            continue
-
-    if best_df is None or best_cols < 6:
-        raise ValueError(
-            f"No se pudo leer {path.name} con separadores esperados. "
-            f"Columnas obtenidas: {best_cols}. Último sep probado: {best_sep}"
-        )
-
-    return best_df
 
 
 def parse_miles_int(series: pd.Series) -> pd.Series:
